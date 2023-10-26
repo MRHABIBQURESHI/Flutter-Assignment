@@ -1,0 +1,121 @@
+import 'package:flutter/material.dart';
+import 'package:kane/add_user_view.dart';
+import 'package:kane/models/person_model.dart';
+
+class HomeView extends StatefulWidget {
+  HomeView({super.key});
+
+  @override
+  State<HomeView> createState() => _HomeViewState();
+}
+
+class _HomeViewState extends State<HomeView> {
+  List<PersonModel> persons = [
+    PersonModel(name: "Abc", age: 20),
+    PersonModel(name: "xyz", age: 10),
+    PersonModel(name: "ijk", age: 40),
+    PersonModel(name: "lmn", age: 30),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AddUserView(),
+            ),
+          );
+          if (result != null) {
+            final person = PersonModel(
+                name: result["name"].toString(), age: int.parse(result["age"]));
+            setState(() {
+              persons.add(person);
+            });
+          }
+        },
+        child: Icon(Icons.add),
+      ),
+      body: ListView.builder(
+        itemCount: persons.length,
+        itemBuilder: (context, index) {
+          return ListTile(
+              onTap: () {
+                personDetailDialog(context, index);
+              },
+              title: Text(persons[index].name),
+              subtitle: Text(persons[index].age.toString()),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                      onPressed: () async {
+                        updateUser(
+                            context: context,
+                            person: persons[index],
+                            updateModel: (result) {
+                              setState(() {
+                                persons[index].name = result["name"];
+                                persons[index].age = int.parse(result["age"]);
+                              });
+                            });
+                      },
+                      icon: Icon(Icons.update)),
+                  IconButton(
+                      onPressed: () {
+                        setState(() {
+                          persons.removeAt(index);
+                        });
+                      },
+                      icon: Icon(Icons.delete)),
+                ],
+              ));
+        },
+      ),
+    );
+  }
+
+  Future<dynamic> personDetailDialog(BuildContext context, int index) {
+    return showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) {
+          return AlertDialog(
+            title: Text("Person's Detail"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(persons[index].name),
+                Text(persons[index].age.toString()),
+              ],
+            ),
+            actions: [
+              TextButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                  },
+                  child: Text("Ok"))
+            ],
+          );
+        });
+  }
+}
+
+updateUser(
+    {required BuildContext context,
+    required PersonModel person,
+    required Function(dynamic result) updateModel}) async {
+  var result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+          builder: (context) => AddUserView(
+                person: person,
+                isUpdate: true,
+              )));
+  if (result != null) {
+    updateModel(result);
+  }
+}
